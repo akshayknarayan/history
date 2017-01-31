@@ -7,6 +7,6 @@ import (
 type HistoryItem interface{}
 
 type HistoryItemWithTime struct {
-	t time.Time   // time associated with item
-	h HistoryItem // item
+	Time time.Time   // time associated with item
+	Item HistoryItem // item
 }

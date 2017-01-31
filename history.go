@@ -108,7 +108,7 @@ func (l *History) ItemsBetween(start time.Time, end time.Time) ([]HistoryItemWit
 		if !t.Before(end) {
 			return its, nil
 		} else if !t.Before(start) {
-			its = append(its, HistoryItemWithTime{t: t, h: l.t[t]})
+			its = append(its, HistoryItemWithTime{Time: t, Item: l.t[t]})
 		}
 	}
 
