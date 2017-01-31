@@ -31,20 +31,6 @@ func (l *QueueHistory) Len() int {
 	return len(l.m)
 }
 
-func (l *QueueHistory) Ends() (HistoryItem, HistoryItem, error) {
-	old, err := l.Oldest()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	new, err := l.Latest()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return old, new, nil
-}
-
 func (l *QueueHistory) Latest() (HistoryItem, error) {
 	l.mux.Lock()
 	defer l.mux.Unlock()

@@ -75,6 +75,9 @@ func (l *UniqueHistory) Add(t time.Time, it HistoryItem) {
 
 // last item before given time and time it was logged
 func (l *UniqueHistory) Before(wanted time.Time) (HistoryItem, time.Time, error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	var then time.Time
 
 	if len(l.times) == 0 {
@@ -98,6 +101,9 @@ func (l *UniqueHistory) Before(wanted time.Time) (HistoryItem, time.Time, error)
 }
 
 func (l *UniqueHistory) NumItemsBetween(start time.Time, end time.Time) (int, error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	count := 0
 	for _, t := range l.times {
 		if !t.Before(end) {
@@ -111,6 +117,9 @@ func (l *UniqueHistory) NumItemsBetween(start time.Time, end time.Time) (int, er
 }
 
 func (l *UniqueHistory) ItemsBetween(start time.Time, end time.Time) ([]HistoryItemWithTime, error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	its := make([]HistoryItemWithTime, 0)
 	for _, t := range l.times {
 		if !t.Before(end) {

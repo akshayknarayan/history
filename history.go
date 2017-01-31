@@ -100,6 +100,9 @@ func (l *History) NumItemsBetween(start time.Time, end time.Time) (int, error) {
 }
 
 func (l *History) ItemsBetween(start time.Time, end time.Time) ([]HistoryItemWithTime, error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	its := make([]HistoryItemWithTime, 0)
 	for _, t := range l.times {
 		if !t.Before(end) {
