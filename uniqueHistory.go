@@ -109,3 +109,27 @@ func (l *UniqueHistory) NumItemsBetween(start time.Time, end time.Time) (int, er
 
 	return count, nil
 }
+
+func (l *UniqueHistory) ItemsBetween(start time.Time, end time.Time) ([]HistoryItemWithTime, error) {
+	its := make([]HistoryItemWithTime, 0)
+	for _, t := range l.times {
+		if !t.Before(end) {
+			return its, nil
+		} else if !t.Before(start) {
+			its = append(its, HistoryItemWithTime{t: t, h: l.t[t]})
+		}
+	}
+
+	return its, nil
+}
+
+func (l *UniqueHistory) TimeOf(wanted HistoryItem) (time.Time, error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
+	if t, ok := l.m[wanted]; !ok {
+		return time.Now(), fmt.Errorf("not found: %v", wanted)
+	} else {
+		return t, nil
+	}
+}

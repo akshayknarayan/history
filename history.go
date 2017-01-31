@@ -83,6 +83,35 @@ func (l *History) Before(wanted time.Time) (HistoryItem, time.Time, error) {
 	return l.t[lastTime], lastTime, nil
 }
 
+func (l *History) NumItemsBetween(start time.Time, end time.Time) (int, error) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
+	count := 0
+	for _, t := range l.times {
+		if !t.Before(end) {
+			return count, nil
+		} else if !t.Before(start) {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
+func (l *History) ItemsBetween(start time.Time, end time.Time) ([]HistoryItemWithTime, error) {
+	its := make([]HistoryItemWithTime, 0)
+	for _, t := range l.times {
+		if !t.Before(end) {
+			return its, nil
+		} else if !t.Before(start) {
+			its = append(its, HistoryItemWithTime{t: t, h: l.t[t]})
+		}
+	}
+
+	return its, nil
+}
+
 func (l *History) AvgBetween(
 	from time.Time,
 	to time.Time,
@@ -112,20 +141,4 @@ func (l *History) AvgBetween(
 	}
 
 	return div(cum, count), nil
-}
-
-func (l *History) NumItemsBetween(start time.Time, end time.Time) (int, error) {
-	l.mux.Lock()
-	defer l.mux.Unlock()
-
-	count := 0
-	for _, t := range l.times {
-		if !t.Before(end) {
-			return count, nil
-		} else if !t.Before(start) {
-			count++
-		}
-	}
-
-	return count, nil
 }
