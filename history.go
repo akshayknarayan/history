@@ -61,8 +61,6 @@ func (l *History) Before(wanted time.Time) (HistoryItem, time.Time, error) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
-	var then time.Time
-
 	if len(l.times) == 0 {
 		return nil, time.Now(), fmt.Errorf("empty log")
 	}
@@ -71,16 +69,37 @@ func (l *History) Before(wanted time.Time) (HistoryItem, time.Time, error) {
 		return l.t[l.times[0]], l.times[0], fmt.Errorf("wanted time before log start")
 	}
 
-	for _, t := range l.times {
+	then := binsearch(wanted, l.times)
+	return l.t[then], then, nil
+}
+
+func binsearch(wanted time.Time, times []time.Time) time.Time {
+	if len(times) <= 8 {
+		return linsearch(wanted, times)
+	}
+
+	mid := len(times) / 2
+
+	if diff := wanted.Sub(times[mid]); diff > 0 {
+		return binsearch(wanted, times[mid:])
+	} else if diff < 0 {
+		return binsearch(wanted, times[:mid])
+	} else {
+		return times[mid]
+	}
+}
+
+func linsearch(wanted time.Time, times []time.Time) time.Time {
+	then := times[0]
+	for _, t := range times {
 		if t.After(wanted) {
-			return l.t[then], then, nil
+			return then
 		} else {
 			then = t
 		}
 	}
 
-	lastTime := l.times[len(l.times)-1]
-	return l.t[lastTime], lastTime, nil
+	return then
 }
 
 func (l *History) NumItemsBetween(start time.Time, end time.Time) (int, error) {
