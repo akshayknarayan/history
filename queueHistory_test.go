@@ -32,7 +32,12 @@ func TestEnds(t *testing.T) {
 		l.Add(i)
 	}
 
-	old, new, err := l.Ends()
+	old, err := l.Oldest()
+	if err != nil {
+		t.Errorf("got error on Ends(): %s", err)
+	}
+
+	new, err := l.Latest()
 	if err != nil {
 		t.Errorf("got error on Ends(): %s", err)
 	}
@@ -51,7 +56,7 @@ func TestLatest(t *testing.T) {
 		l.Add(i)
 	}
 
-	_, new, err := l.Ends()
+	new, err := l.Latest()
 	if err != nil {
 		t.Errorf("got error on Ends(): %s", err)
 	}
