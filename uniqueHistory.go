@@ -94,15 +94,21 @@ func (l *UniqueHistory) NumItemsBetween(start time.Time, end time.Time) (int, er
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
-	count := 0
-	for _, t := range l.times {
-		if !t.Before(end) {
-			return count, nil
-		} else if !t.Before(start) {
-			count++
-		}
+	if len(l.times) == 0 {
+		return 0, fmt.Errorf("empty log")
 	}
 
+	startIndex := binsearchindex(start, l.times, 0)
+	endIndex := binsearchindex(end, l.times, 0)
+	count := 0
+	if l.times[startIndex] == start {
+		count = endIndex-startIndex-1
+	} else {
+		count = endIndex - startIndex
+	}
+	if count < 0 {
+		count = 0
+	}
 	return count, nil
 }
 
@@ -111,12 +117,15 @@ func (l *UniqueHistory) ItemsBetween(start time.Time, end time.Time) ([]HistoryI
 	defer l.mux.Unlock()
 
 	its := make([]HistoryItemWithTime, 0)
-	for _, t := range l.times {
-		if !t.Before(end) {
-			return its, nil
-		} else if !t.Before(start) {
-			its = append(its, HistoryItemWithTime{Time: t, Item: l.t[t]})
-		}
+	startIndex := binsearchindex(start, l.times, 0)
+	endIndex := binsearchindex(end, l.times, 0)
+
+	if l.times[startIndex] == start {
+		startIndex += 1
+	}
+	
+	for i:= startIndex; i<=endIndex; i++ {
+		its = append(its, HistoryItemWithTime{Time: l.times[i], Item: l.t[l.times[i]]})
 	}
 
 	return its, nil

@@ -73,6 +73,38 @@ func (l *History) Before(wanted time.Time) (HistoryItem, time.Time, error) {
 	return l.t[then], then, nil
 }
 
+func binsearchindex(wanted time.Time, times []time.Time, index int) int {
+	if len(times) <= 8 {
+		return linsearchindex(wanted, times, index)
+	}
+
+	mid := len(times) / 2
+
+	if diff := wanted.Sub(times[mid]); diff > 0 {
+		return binsearchindex(wanted, times[mid:], index+mid)
+	} else if diff < 0 {
+		return binsearchindex(wanted, times[:mid], index)
+	} else {
+		return index+mid
+	}
+}
+
+func linsearchindex(wanted time.Time, times []time.Time, index int) int {
+	count := 0
+	for _, t := range times {
+		if t.After(wanted) {
+			return index+count
+		} else {
+			count += 1
+		}
+	}
+	if count>=len(times) {
+		return index+len(times)-1
+	} else {
+		return index+count
+	}
+}
+
 func binsearch(wanted time.Time, times []time.Time) time.Time {
 	if len(times) <= 8 {
 		return linsearch(wanted, times)
@@ -98,7 +130,6 @@ func linsearch(wanted time.Time, times []time.Time) time.Time {
 			then = t
 		}
 	}
-
 	return then
 }
 
@@ -106,15 +137,21 @@ func (l *History) NumItemsBetween(start time.Time, end time.Time) (int, error) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
-	count := 0
-	for _, t := range l.times {
-		if !t.Before(end) {
-			return count, nil
-		} else if !t.Before(start) {
-			count++
-		}
+	if len(l.times) == 0 {
+		return 0, fmt.Errorf("empty log")
 	}
 
+	startIndex := binsearchindex(start, l.times, 0)
+	endIndex := binsearchindex(end, l.times, 0)
+	count := 0
+	if l.times[startIndex] == start {
+		count = endIndex-startIndex-1
+	} else {
+		count = endIndex - startIndex
+	}
+	if count < 0 {
+		count = 0
+	}
 	return count, nil
 }
 
@@ -123,12 +160,16 @@ func (l *History) ItemsBetween(start time.Time, end time.Time) ([]HistoryItemWit
 	defer l.mux.Unlock()
 
 	its := make([]HistoryItemWithTime, 0)
-	for _, t := range l.times {
-		if !t.Before(end) {
-			return its, nil
-		} else if !t.Before(start) {
-			its = append(its, HistoryItemWithTime{Time: t, Item: l.t[t]})
-		}
+
+	startIndex := binsearchindex(start, l.times, 0)
+	endIndex := binsearchindex(end, l.times, 0)
+
+	if l.times[startIndex] == start {
+		startIndex += 1
+	}
+	
+	for i:= startIndex; i<=endIndex; i++ {
+		its = append(its, HistoryItemWithTime{Time: l.times[i], Item: l.t[l.times[i]]})
 	}
 
 	return its, nil
